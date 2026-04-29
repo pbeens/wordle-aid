@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wordle Aid - Mobile (Experimental)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #121213;
+      --surface: #1a1a1b;
+      --border: #3a3a3c;
+      --text: #ffffff;
+      --muted: #818384;
+      --green: #538d4e;
+      --yellow: #b59f3b;
+      --accent: #3b82f6; /* Blue for selection highlight */
+      --tile-size: clamp(45px, 15vw, 60px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    header { text-align: center; margin-bottom: 20px; width: 100%; }
+    h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: 0.1rem; text-transform: uppercase; }
+    header p { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── Grid ── */
+    .grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .word-row { display: grid; grid-template-columns: repeat(5, var(--tile-size)); gap: 5px; }
+    
+    .tile {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      user-select: none;
+      border-radius: 4px;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      cursor: pointer;
+    }
+
+    .tile.green { background-color: var(--green); border-color: var(--green); }
+    .tile.yellow { background-color: var(--yellow); border-color: var(--yellow); }
+    .tile.selected { border-color: var(--accent); transform: scale(1.05); box-shadow: 0 0 10px var(--accent); }
+    .tile.empty { border-style: dashed; }
+
+    /* ── Invalid Row ── */
+    .invalid-header {
+      color: var(--muted);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05rem;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .invalid-row { display: grid; grid-template-columns: repeat(5, var(--tile-size)); gap: 5px; margin-bottom: 24px; }
+    .invalid-slot {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 2px;
+      padding: 2px;
+      overflow-y: auto;
+    }
+
+    .chip {
+      background: #333;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 4px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .chip span { cursor: pointer; color: var(--muted); }
+
+    /* ── Keyboard ── */
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 500px;
+      margin-top: auto;
+      padding-bottom: 20px;
+    }
+
+    .kb-row { display: flex; gap: 4px; touch-action: manipulation; }
+    
+    .key {
+      background-color: var(--muted);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      height: 48px;
+      width: clamp(28px, 8vw, 40px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .key.crossed { text-decoration: line-through; text-decoration-color: #c0392b; opacity: 0.5; }
+    .key.in-word { background-color: var(--yellow); }
+    .key.selected { background-color: var(--accent); transform: translateY(-5px); }
+
+    /* ── Controls ── */
+    .controls { display: flex; gap: 12px; margin-top: 20px; width: 100%; justify-content: center; }
+    .btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .btn:active { background: var(--surface); }
+    .btn-reset { color: #ff4d4d; border-color: #442222; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      top: 20px;
+      background: #c0392b;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      display: none;
+      z-index: 3000;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Wordle Aid</h1>
+    <p>Tap to Pick • Tap to Place</p>
+  </header>
+
+  <div id="toast"></div>
+
+  <main>
+    <div class="grid" id="grid"></div>
+
+    <div class="invalid-header">Invalid for position</div>
+    <div class="invalid-row" id="invalid-row"></div>
+
+    <div class="controls">
+      <button class="btn btn-reset" id="btn-reset">Reset All</button>
+      <button class="btn" id="btn-cancel">Cancel Selection</button>
+    </div>
+  </main>
+
+  <div class="keyboard" id="keyboard"></div>
+
+  <script>
+    const ROWS = 3;
+    const COLS = 5;
+    const COLOR_CYCLE = { '': 'green', 'green': 'yellow', 'yellow': '' };
+    const KEY_STATE_CYCLE = { '': 'crossed', 'crossed': 'in-word', 'in-word': '' };
+
+    let letters = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+    let colors = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+    let invalidLetters = Array.from({length: COLS}, () => []);
+    let keyStates = new Map();
+    
+    // Selection state: { letter: 'A', source: 'keyboard' | 'word', wi: 0, si: 0 }
+    let selection = null;
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 2000);
+    }
+
+    function renderWords() {
+      const container = document.getElementById('grid');
+      container.innerHTML = '';
+      for (let r = 0; r < ROWS; r++) {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'word-row';
+        for (let c = 0; c < COLS; c++) {
+          const char = letters[r][c];
+          const tile = document.createElement('div');
+          tile.className = `tile ${colors[r][c]}`;
+          if (char) tile.textContent = char;
+          else tile.classList.add('empty');
+
+          // Highlight if this specific tile is selected
+          if (selection && selection.source === 'word' && selection.wi === r && selection.si === c) {
+            tile.classList.add('selected');
+          }
+
+          tile.addEventListener('click', () => handleTileClick(r, c));
+          rowDiv.appendChild(tile);
+        }
+        container.appendChild(rowDiv);
+      }
+    }
+
+    function renderInvalidRow() {
+      const container = document.getElementById('invalid-row');
+      container.innerHTML = '';
+      for (let c = 0; c < COLS; c++) {
+        const slot = document.createElement('div');
+        slot.className = 'invalid-slot';
+        
+        invalidLetters[c].forEach((letter, idx) => {
+          const chip = document.createElement('div');
+          chip.className = 'chip';
+          chip.textContent = letter;
+          const x = document.createElement('span');
+          x.innerHTML = '&times;';
+          x.onclick = (e) => {
+            e.stopPropagation();
+            invalidLetters[c].splice(idx, 1);
+            renderInvalidRow();
+          };
+          chip.appendChild(x);
+          slot.appendChild(chip);
+        });
+
+        slot.addEventListener('click', () => handleInvalidSlotClick(c));
+        container.appendChild(slot);
+      }
+    }
+
+    function renderKeyboard() {
+      const container = document.getElementById('keyboard');
+      container.innerHTML = '';
+      const layout = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+      layout.forEach((rowStr, ri) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'kb-row';
+        rowStr.split('').forEach(char => {
+          const key = document.createElement('div');
+          const state = keyStates.get(char) || '';
+          key.className = `key ${state}`;
+          key.textContent = char;
+
+          if (selection && selection.source === 'keyboard' && selection.letter === char) {
+            key.classList.add('selected');
+          }
+
+          // Keyboard click: 
+          // 1. If selection active -> cancel or swap? Let's say if click key while holding it -> cycle key state.
+          // 2. If nothing selected -> select the letter.
+          key.addEventListener('click', () => {
+            if (selection && selection.letter === char) {
+              // Click selected letter -> cycle its state instead
+              keyStates.set(char, KEY_STATE_CYCLE[state]);
+              selection = null;
+            } else {
+              selection = { letter: char, source: 'keyboard' };
+            }
+            renderKeyboard();
+            renderWords();
+          });
+
+          rowDiv.appendChild(key);
+        });
+        container.appendChild(rowDiv);
+      });
+    }
+
+    function handleTileClick(wi, si) {
+      const existingLetter = letters[wi][si];
+
+      if (selection) {
+        // Placement Logic
+        const letterToPlace = selection.letter;
+
+        // Validation
+        if (invalidLetters[si].includes(letterToPlace)) {
+          showToast(`'${letterToPlace}' is invalid in column ${si + 1}`);
+          return;
+        }
+
+        // Move/Swap
+        if (selection.source === 'word') {
+          // Swap if moving from another word tile
+          letters[selection.wi][selection.si] = existingLetter;
+          colors[selection.wi][selection.si] = colors[wi][si];
+        }
+        
+        letters[wi][si] = letterToPlace;
+        // Keep color if moving from word, otherwise reset
+        if (selection.source !== 'word') colors[wi][si] = '';
+
+        selection = null;
+      } else {
+        // Selection/Cycle Logic
+        if (existingLetter) {
+          // Double tap? No, let's say tap letter -> cycle color.
+          // How to "pick up" then? Maybe long press? 
+          // For now: Single tap cycles color, button to "Pick up". 
+          // Actually, let's try: Tap letter -> select it. Tap empty -> place.
+          // But how to cycle color then?
+          // Let's do: Tap letter cycles color. Long press picks up? 
+          // Better for mobile: Tap selects. Tap AGAIN cycles.
+          if (selection === null) {
+            selection = { letter: existingLetter, source: 'word', wi, si };
+          }
+        }
+      }
+      renderWords();
+      renderKeyboard();
+    }
+
+    // Separate cycle trigger to avoid confusion
+    function toggleTileColor(wi, si) {
+      if (!letters[wi][si]) return;
+      const next = COLOR_CYCLE[colors[wi][si]];
+      colors[wi][si] = next;
+      if (next === 'green') {
+        keyStates.set(letters[wi][si], 'in-word');
+        renderKeyboard();
+      }
+      renderWords();
+    }
+
+    // Re-refining the interaction for clarity:
+    // 1. Click empty slot -> if holding, place.
+    // 2. Click occupied slot -> if holding, swap. If NOT holding, select.
+    // 3. Click selected slot -> cycle color.
+    function handleTileClick(wi, si) {
+      if (selection) {
+        const letterToPlace = selection.letter;
+        if (invalidLetters[si].includes(letterToPlace)) {
+          showToast(`'${letterToPlace}' is invalid in column ${si + 1}`);
+          return;
+        }
+
+        if (selection.source === 'word' && selection.wi === wi && selection.si === si) {
+          // Clicked the same tile -> cycle color
+          toggleTileColor(wi, si);
+          return;
+        }
+
+        const oldLetter = letters[wi][si];
+        const oldColor = colors[wi][si];
+
+        letters[wi][si] = letterToPlace;
+        if (selection.source === 'word') {
+          letters[selection.wi][selection.si] = oldLetter;
+          colors[selection.wi][selection.si] = oldColor;
+          colors[wi][si] = colors[wi][si]; // keep current? No, logic is tricky.
+        } else {
+          colors[wi][si] = '';
+        }
+
+        selection = null;
+      } else {
+        if (letters[wi][si]) {
+          selection = { letter: letters[wi][si], source: 'word', wi, si };
+        }
+      }
+      renderWords();
+      renderKeyboard();
+    }
+
+    function handleInvalidSlotClick(si) {
+      if (selection) {
+        const letter = selection.letter;
+        if (!invalidLetters[si].includes(letter)) {
+          invalidLetters[si].push(letter);
+          keyStates.set(letter, 'in-word');
+        }
+        if (selection.source === 'word') {
+          letters[selection.wi][selection.si] = '';
+          colors[selection.wi][selection.si] = '';
+        }
+        selection = null;
+        renderInvalidRow();
+        renderWords();
+        renderKeyboard();
+      }
+    }
+
+    document.getElementById('btn-reset').onclick = () => {
+      if (confirm('Clear everything?')) {
+        letters = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+        colors = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+        invalidLetters = Array.from({length: COLS}, () => []);
+        keyStates.clear();
+        selection = null;
+        renderWords();
+        renderInvalidRow();
+        renderKeyboard();
+      }
+    };
+
+    document.getElementById('btn-cancel').onclick = () => {
+      selection = null;
+      renderWords();
+      renderKeyboard();
+    };
+
+    // Init
+    renderWords();
+    renderInvalidRow();
+    renderKeyboard();
+  </script>
+</body>
+</html>

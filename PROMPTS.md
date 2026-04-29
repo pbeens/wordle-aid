@@ -161,3 +161,13 @@ This file documents the development history of **Wordle-Aid**. It serves as a tr
 > Let's do the same thing. If I drop a letter and then I mark it as the correct location... [automatically change its color state on the keyboard].
 
 **Technical Context:** Updated the `click` handler in `makeTile` to set the letter's state in `keyStates` to `'in-word'` whenever a tile is cycled to the `'green'` state.
+
+---
+
+### User Prompt 14 – 2026-04-29 13:00 – Mobile Interaction Experiment
+**Goal:** Create a touch-friendly version of the app for mobile devices.
+
+**Prompt:**
+> How difficult would it be to make it mobile friendly as well? ... Let's create an index_mobile that we can start experimenting on. Instead of drag, it would be to touch a button, then touch the location, something like that.
+
+**Technical Context:** Created `index_mobile.html` using a "Select then Place" interaction model. Removed all native Drag and Drop logic in favor of `click` events that manage a `selection` state. Implemented responsive CSS using `clamp()` and flexbox to optimize for portrait mobile screens.
