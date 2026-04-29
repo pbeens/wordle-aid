@@ -171,3 +171,13 @@ This file documents the development history of **Wordle-Aid**. It serves as a tr
 > How difficult would it be to make it mobile friendly as well? ... Let's create an index_mobile that we can start experimenting on. Instead of drag, it would be to touch a button, then touch the location, something like that.
 
 **Technical Context:** Created `index_mobile.html` using a "Select then Place" interaction model. Removed all native Drag and Drop logic in favor of `click` events that manage a `selection` state. Implemented responsive CSS using `clamp()` and flexbox to optimize for portrait mobile screens.
+
+---
+
+### User Prompt 15 – 2026-04-29 13:45 – Mobile Detection Warning
+**Goal:** Notify mobile users that the main page is optimized for desktop and point them to the mobile version.
+
+**Prompt:**
+> On the main version, if you detect a mobile interface, can you perhaps provide a pop-up warning them that it is for desktop only?
+
+**Technical Context:** Added a touch-detection script and a modal overlay to `index.html`. The modal includes a call-to-action link to `index_mobile.html` and an option to dismiss the warning.
