@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wordle Aid</title>
+  <meta name="description" content="Drag-and-drop Wordle helper to visualize letter placement with green/yellow color coding.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #121213;
+      --surface: #1e1e1f;
+      --border: #3a3a3c;
+      --border-filled: #565758;
+      --text: #ffffff;
+      --muted: #818384;
+      --green: #538d4e;
+      --yellow: #b59f3b;
+      --key-bg: #818384;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 60px;
+    }
+
+    header {
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+    }
+
+    header p {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    main {
+      max-width: 560px;
+      width: 100%;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      margin-top: 28px;
+    }
+
+    /* ── Word Rows ── */
+    .words-section { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+    .word-row { display: flex; align-items: center; gap: 12px; }
+
+    .word-label {
+      min-width: 54px;
+      text-align: right;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .word-tiles { display: flex; gap: 6px; }
+
+    /* ── Tiles ── */
+    .tile {
+      width: 62px;
+      height: 62px;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      user-select: none;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+      position: relative;
+    }
+
+    .tile.filled {
+      border-color: var(--border-filled);
+      cursor: grab;
+    }
+
+    .tile.filled:hover { border-color: var(--muted); }
+    .tile.filled:active { cursor: grabbing; }
+
+    .tile.color-green { background: var(--green); border-color: var(--green); }
+    .tile.color-yellow { background: var(--yellow); border-color: var(--yellow); }
+
+    .tile.is-dragging { opacity: 0.25; }
+
+    .tile.drag-over {
+      border: 2px dashed #fff !important;
+      background: var(--surface);
+      transform: scale(1.07);
+    }
+
+    /* Invalid drop target flash */
+    .tile.invalid-hover {
+      border: 2px solid #c0392b !important;
+      background: rgba(192, 57, 43, 0.15);
+    }
+
+    /* Toast notification */
+    #toast {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: #c0392b;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── Invalid Letters Row ── */
+    .invalid-row {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .invalid-row-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .invalid-subtitle {
+      font-size: 0.58rem;
+      color: #6a5a2a;
+      letter-spacing: 1px;
+      font-style: italic;
+    }
+
+    .invalid-slots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .invalid-slot {
+      width: 62px;
+      min-height: 62px;
+      border: 2px dashed #6a5a2a;
+      border-radius: 4px;
+      padding: 5px 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .invalid-slot.drag-over {
+      border-color: var(--yellow);
+      border-style: solid;
+      background: rgba(181,159,59,0.1);
+    }
+
+    .inv-chip {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(181,159,59,0.2);
+      border: 1px solid var(--yellow);
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text);
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .inv-chip-x {
+      cursor: pointer;
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1;
+      flex-shrink: 0;
+      padding: 1px 2px;
+      border-radius: 2px;
+      transition: color 0.1s, background 0.1s;
+    }
+
+    .inv-chip-x:hover { color: #fff; background: #c0392b; }
+
+    /* ── Keyboard ── */
+    .alphabet-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      transition: border-color 0.15s;
+    }
+
+    .alphabet-section.accepting { border-color: var(--muted); border-style: dashed; }
+
+    .section-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .keyboard { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+    .keyboard-row { display: flex; gap: 5px; }
+
+    .key {
+      height: 56px;
+      min-width: 40px;
+      padding: 0 6px;
+      border-radius: 5px;
+      background: var(--key-bg);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      user-select: none;
+      border: none;
+      transition: background 0.12s, transform 0.1s, box-shadow 0.12s;
+    }
+
+    .key:hover {
+      background: #9a9b9c;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.5);
+    }
+
+    .key:active { cursor: grabbing; transform: translateY(0); }
+
+    /* In-word key state (letter is in the word) */
+    .key.in-word {
+      background: var(--yellow);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .key.in-word:hover {
+      background: #cca840;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.5);
+    }
+
+    /* Crossed-out key state (letter eliminated) */
+    .key.crossed {
+      background: #2a2a2c;
+      color: #4a4a4c;
+      cursor: pointer;
+      text-decoration: line-through;
+      text-decoration-color: #c0392b;
+      text-decoration-thickness: 2px;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .key.crossed:hover {
+      background: #333335;
+      color: #6a6a6c;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Help & Controls ── */
+    .help {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 3px;
+      font-weight: 700;
+      font-size: 0.66rem;
+      color: #fff;
+    }
+
+    .badge-green { background: var(--green); }
+    .badge-yellow { background: var(--yellow); }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 9px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .btn-reset:hover { border-color: var(--muted); color: #fff; background: var(--surface); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Wordle Aid</h1>
+  <p>Drag · Drop · Visualize</p>
+</header>
+
+<main>
+  <div class="words-section" id="words-section"></div>
+
+  <!-- Invalid Letters row -->
+  <div class="invalid-row" id="invalid-row">
+    <div class="invalid-row-header">
+      <div class="word-label" style="min-width:54px;">Invalid</div>
+      <span class="invalid-subtitle">letters that can&rsquo;t go in each position</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-left:66px;">
+      <div class="invalid-slots" id="invalid-slots"></div>
+    </div>
+  </div>
+
+  <div class="alphabet-section" id="alphabet-section">
+    <div class="section-label">Drag letters to the words above</div>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+
+  <p class="help">
+    Drag a letter onto a word slot &nbsp;·&nbsp;
+    Click a placed letter to cycle colors:
+    &nbsp;<span class="badge badge-green">green</span>&nbsp; correct position
+    &nbsp;<span class="badge badge-yellow">yellow</span>&nbsp; wrong position
+    &nbsp;·&nbsp; Drag back here to remove
+    <br>
+    <kbd style="background:#2a2a2c;border:1px solid #555;border-radius:3px;padding:1px 5px;font-size:0.68rem;">Ctrl</kbd>+drag a placed letter to <em>copy</em> it (source stays)
+    <br>
+    Click a keyboard letter to cycle:
+    normal &rarr; <span class="badge badge-yellow" style="font-size:0.66rem;">in word</span> &rarr;
+    <span style="text-decoration:line-through;text-decoration-color:#c0392b;">eliminated</span>
+    &rarr; normal
+  </p>
+
+  <button class="btn-reset" id="btn-reset">↺ &nbsp;Reset All</button>
+</main>
+
+<script>
+  const ROWS = 3;
+  const COLS = 5;
+  const KEYS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+
+  // State: parallel arrays for letters and colors
+  let letters = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+  let colors  = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+
+  // Invalid letters: 5 positions, each holding an array of letters
+  let invalidLetters = Array.from({length: COLS}, () => []);
+
+  // Map of letter → state: '' | 'in-word' | 'crossed'
+  const KEY_STATE_CYCLE = { '': 'in-word', 'in-word': 'crossed', 'crossed': '' };
+  let keyStates = new Map();
+
+  // Active drag info
+  let drag = null; // { source:'alphabet'|'word', letter, wi, si }
+
+  const COLOR_CYCLE = { '': 'green', 'green': 'yellow', 'yellow': '' };
+
+  // ── Render ──────────────────────────────────────────────
+
+  function render() {
+    renderWords();
+    // Keyboard is static; only render once
+  }
+
+  function renderWords() {
+    const section = document.getElementById('words-section');
+    section.innerHTML = '';
+
+    for (let wi = 0; wi < ROWS; wi++) {
+      const row = document.createElement('div');
+      row.className = 'word-row';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'word-label';
+      lbl.textContent = `Word ${wi + 1}`;
+      row.appendChild(lbl);
+
+      const tiles = document.createElement('div');
+      tiles.className = 'word-tiles';
+
+      for (let si = 0; si < COLS; si++) {
+        const tile = makeTile(wi, si);
+        tiles.appendChild(tile);
+      }
+
+      row.appendChild(tiles);
+      section.appendChild(row);
+    }
+  }
+
+  function makeTile(wi, si) {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.dataset.wi = wi;
+    tile.dataset.si = si;
+
+    const letter = letters[wi][si];
+    const color  = colors[wi][si];
+
+    if (letter) {
+      tile.textContent = letter;
+      tile.classList.add('filled');
+      if (color) tile.classList.add('color-' + color);
+      tile.draggable = true;
+
+      // Click = cycle color
+      tile.addEventListener('click', (e) => {
+        // Don't cycle if we just finished a drag
+        if (tile.classList.contains('is-dragging')) return;
+        colors[wi][si] = COLOR_CYCLE[colors[wi][si]];
+        renderWords();
+      });
+
+      tile.addEventListener('dragstart', (e) => {
+        drag = { source: 'word', letter, wi, si };
+        // Allow both move and copy; Ctrl+drag = copy
+        e.dataTransfer.effectAllowed = 'copyMove';
+        // Defer so element is still visible as drag image
+        requestAnimationFrame(() => tile.classList.add('is-dragging'));
+      });
+
+      tile.addEventListener('dragend', () => {
+        tile.classList.remove('is-dragging');
+        drag = null;
+      });
+    }
+
+    // All tiles are drop targets
+    tile.addEventListener('dragenter', (e) => {
+      if (!drag) return;
+      const targetSi = parseInt(tile.dataset.si);
+      if (invalidLetters[targetSi].includes(drag.letter)) {
+        tile.classList.add('invalid-hover');
+        showRejectionToast(drag.letter, targetSi);
+      }
+    });
+
+    tile.addEventListener('dragover', (e) => {
+      const targetSi = parseInt(tile.dataset.si);
+      // If this letter is invalid for this column, reject the drop
+      // (no preventDefault = browser shows forbidden cursor + snaps ghost back)
+      if (drag && invalidLetters[targetSi].includes(drag.letter)) return;
+
+      e.preventDefault();
+      // Show copy cursor when Ctrl is held
+      if (drag && drag.source === 'word' && e.ctrlKey) {
+        e.dataTransfer.dropEffect = 'copy';
+      } else {
+        e.dataTransfer.dropEffect = drag && drag.source === 'word' ? 'move' : 'copy';
+      }
+      tile.classList.add('drag-over');
+    });
+
+    tile.addEventListener('dragleave', () => tile.classList.remove('drag-over', 'invalid-hover'));
+
+    tile.addEventListener('drop', (e) => {
+      e.preventDefault();
+      tile.classList.remove('drag-over');
+      if (!drag) return;
+
+      const targetWi = parseInt(tile.dataset.wi);
+      const targetSi = parseInt(tile.dataset.si);
+
+      // Belt-and-suspenders: reject if invalid for this column
+      if (invalidLetters[targetSi].includes(drag.letter)) {
+        drag = null;
+        return;
+      }
+
+      if (drag.source === 'alphabet') {
+        // Place letter from keyboard; reset color
+        letters[targetWi][targetSi] = drag.letter;
+        colors[targetWi][targetSi]  = '';
+      } else {
+        const srcWi = drag.wi, srcSi = drag.si;
+        if (srcWi === targetWi && srcSi === targetSi) return;
+
+        if (e.ctrlKey) {
+          // Ctrl+drag = COPY: source stays, target gets letter+color
+          letters[targetWi][targetSi] = drag.letter;
+          colors[targetWi][targetSi]  = colors[srcWi][srcSi];
+        } else {
+          // Normal drag = SWAP
+          const tmpL = letters[targetWi][targetSi];
+          const tmpC = colors[targetWi][targetSi];
+          letters[targetWi][targetSi] = drag.letter;
+          colors[targetWi][targetSi]  = colors[srcWi][srcSi];
+          letters[srcWi][srcSi] = tmpL;
+          colors[srcWi][srcSi]  = tmpC;
+        }
+      }
+
+      drag = null;
+      renderWords();
+    });
+
+    return tile;
+  }
+
+  // ── Rejection Toast ──────────────────────────────────────
+
+  let toastTimer = null;
+
+  function showRejectionToast(letter, si) {
+    if (toastTimer) return; // already visible
+    const toast = document.getElementById('toast');
+    toast.textContent = `“${letter}” can’t go in position ${si + 1}!`;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => {
+      toast.classList.remove('show');
+      toastTimer = null;
+    }, 1600);
+  }
+
+  // ── Invalid Letters Row ─────────────────────────────────
+
+  function renderInvalidRow() {
+    const container = document.getElementById('invalid-slots');
+    container.innerHTML = '';
+    for (let si = 0; si < COLS; si++) {
+      container.appendChild(makeInvalidSlot(si));
+    }
+  }
+
+  function makeInvalidSlot(si) {
+    const slot = document.createElement('div');
+    slot.className = 'invalid-slot';
+    slot.dataset.si = si;
+    slot.dataset.type = 'invalid';
+
+    // Render chips
+    invalidLetters[si].forEach((letter, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'inv-chip';
+      chip.innerHTML = `<span>${letter}</span><span class="inv-chip-x" title="Remove">&#x2715;</span>`;
+      chip.querySelector('.inv-chip-x').addEventListener('click', (e) => {
+        e.stopPropagation();
+        invalidLetters[si].splice(idx, 1);
+        renderInvalidRow();
+      });
+      slot.appendChild(chip);
+    });
+
+    slot.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      slot.classList.add('drag-over');
+    });
+
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+
+    slot.addEventListener('drop', (e) => {
+      e.preventDefault();
+      slot.classList.remove('drag-over');
+      if (!drag) return;
+
+      const letter = drag.letter;
+
+      // Avoid exact duplicates in this slot
+      if (!invalidLetters[si].includes(letter)) {
+        invalidLetters[si].push(letter);
+      }
+
+      // If dragged from a word tile without Ctrl: clear the source slot
+      if (drag.source === 'word' && !e.ctrlKey) {
+        letters[drag.wi][drag.si] = '';
+        colors[drag.wi][drag.si]  = '';
+        renderWords();
+      }
+
+      drag = null;
+      renderInvalidRow();
+    });
+
+    return slot;
+  }
+
+  function renderKeyboard() {
+    const kb = document.getElementById('keyboard');
+    kb.innerHTML = '';
+    KEYS.forEach(rowStr => {
+      const row = document.createElement('div');
+      row.className = 'keyboard-row';
+      [...rowStr].forEach(letter => {
+        const key = document.createElement('div');
+        key.className = 'key';
+        key.textContent = letter;
+        key.draggable = true;
+        key.id = 'key-' + letter;
+
+        key.addEventListener('dragstart', (e) => {
+          drag = { source: 'alphabet', letter };
+          e.dataTransfer.effectAllowed = 'copy';
+        });
+
+        key.addEventListener('dragend', () => { drag = null; });
+
+        // Click to cycle state: normal → in-word → crossed → normal
+        key.addEventListener('click', () => {
+          if (drag) return; // ignore clicks that were part of a drag
+          const current = keyStates.get(letter) || '';
+          const next = KEY_STATE_CYCLE[current];
+          key.classList.remove('in-word', 'crossed');
+          if (next) {
+            keyStates.set(letter, next);
+            key.classList.add(next);
+          } else {
+            keyStates.delete(letter);
+          }
+        });
+
+        // Apply saved state on re-render
+        const savedState = keyStates.get(letter);
+        if (savedState) key.classList.add(savedState);
+
+        row.appendChild(key);
+      });
+      kb.appendChild(row);
+    });
+  }
+
+  // ── Alphabet drop zone (remove letter) ──────────────────
+
+  const alphSection = document.getElementById('alphabet-section');
+
+  alphSection.addEventListener('dragover', (e) => {
+    if (drag && drag.source === 'word') {
+      e.preventDefault();
+      alphSection.classList.add('accepting');
+    }
+  });
+
+  alphSection.addEventListener('dragleave', (e) => {
+    // Only remove class if we've truly left the section
+    if (!alphSection.contains(e.relatedTarget)) {
+      alphSection.classList.remove('accepting');
+    }
+  });
+
+  alphSection.addEventListener('drop', (e) => {
+    alphSection.classList.remove('accepting');
+    if (drag && drag.source === 'word') {
+      e.preventDefault();
+      letters[drag.wi][drag.si] = '';
+      colors[drag.wi][drag.si]  = '';
+      drag = null;
+      renderWords();
+    }
+  });
+
+  // ── Reset ────────────────────────────────────────────────
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    letters = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+    colors  = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+    invalidLetters = Array.from({length: COLS}, () => []);
+    keyStates.clear();
+    renderWords();
+    renderInvalidRow();
+    renderKeyboard();
+  });
+
+  // ── Init ─────────────────────────────────────────────────
+
+  renderKeyboard();
+  renderWords();
+  renderInvalidRow();
+</script>
+
+<div id="toast"></div>
+
+</body>
+</html>
