@@ -1,63 +1,92 @@
-# Wordle Aid – Prompts
+# Wordle-Aid Development Prompts
+
+This file documents the development history of **Wordle-Aid**. It serves as a transparent transcript of the collaborative process between the human developer (**Peter Beens**) and the AI coding assistant (**Antigravity**). It tracks the evolution of requirements, technical implementation decisions, and the creative direction of the project.
 
 ---
 
 ### User Prompt 1 – 2026-04-29 07:34 – Initial Concept
+**Goal:** Create a visual Wordle scratchpad with three 5-letter rows and a reusable alphabet palette.
 
-> I want a web-based program that's going to be like a wordle aid. All it is, I think, is: give me blocks at the top of the page for three five-letter words, and then the alphabet below it. What I want to be able to do is drag and drop letters to the three words so that I can visualize words.
+**Prompt:**
+> I'd like a web-based Wordle aid. The layout should have blocks at the top for three five-letter words and the alphabet below it. I want to be able to drag and drop letters from the alphabet to the words to visualize different possibilities.
 >
-> Also, I would like to be able to perhaps color code words. Maybe once a letter is placed on one of the words, I can click on it to toggle between the wordle colors. Green means I know where it goes; yellow means I don't know where it goes, but it is a valid letter. That way I can just position letters and try to imagine the different words.
+> I also want to color-code the letters. Once a letter is placed, I should be able to click it to toggle between Wordle colors: Green for the correct position and Yellow for a valid letter in the wrong position. This is purely a visual tool to help me imagine different word combinations.
+
+---
+
+### User Prompt 2 – 2026-04-29 07:37 – Refining Drag-and-Drop Mechanics
+**Goal:** Establish rules for letter reusability, reordering, and removal.
+
+**Prompt:**
+> Let's refine the mechanics:
+> - Letters dragged from the alphabet should stay there (reusable palette) so I can use them in multiple words.
+> - I want to be able to reorder letters within a word and move them between words.
+> - To remove a letter, I should be able to drag it back to the alphabet area.
+> - Clicking a placed letter should cycle through the colors (Green, Yellow, and Uncolored).
+> - We don't need to worry about "gray" (excluded) letters in the word slots; if a letter isn't used, I'll just drag it off.
+> - No word validation is necessary; it's a free-form scratchpad.
+
+---
+
+### User Prompt 3 – 2026-04-29 07:46 – Alphabet Elimination
+**Goal:** Add a way to mark letters as "eliminated" directly on the keyboard palette.
+
+**Prompt:**
+> I also want to be able to click letters in the alphabet palette. Clicking a letter should toggle a "crossed-out" state so I can keep track of eliminated letters visually while I work.
+
+**Technical Context:** Implemented a `crossed` CSS state with a red strikethrough and dimmed background for the keyboard keys.
+
+---
+
+### User Prompt 4 – 2026-04-29 07:49 – Duplicate via Ctrl+Drag
+**Goal:** Implement a standard "copy" shortcut for faster visualization.
+
+**Prompt:**
+> Can we use the standard "Ctrl+drag" convention to duplicate letters? I’d like to be able to hold Ctrl and drag a letter from one slot to another to copy it instead of moving it.
+
+**Technical Context:** Updated the drag-and-drop logic to check for `e.ctrlKey`. Normal drag performs a swap; Ctrl+drag performs a copy of the letter and its color state.
+
+---
+
+### User Prompt 5 – 2026-04-29 07:52 – 3-State Keyboard Cycle
+**Goal:** Expand the keyboard palette to track "Known" vs "Eliminated" letters.
+
+**Prompt:**
+> Let's upgrade the alphabet click behavior to a 3-state cycle:
+> 1. First click: Mark as "in the word" (Yellow).
+> 2. Second click: Mark as "eliminated" (Crossed out).
+> 3. Third click: Reset to normal.
+
+---
+
+### User Prompt 6 – 2026-04-29 08:02 – Position-Specific Invalid Letters
+**Goal:** Add a way to track letters that are known to be in the word but are "invalid" for specific positions.
+
+**Prompt:**
+> I want to add an "Invalid Letters" row below the three words. This row should also have five slots, but each slot must be able to hold multiple letters.
 >
-> Ask me any questions to clarify the requirements, because I'm sure that there are situations I'm not imagining.
+> If I know a letter belongs in the word but *cannot* go in a specific position, I'll drag it there. This helps me track those "Yellow" letter rules more effectively.
+
+**Technical Context:** Implemented an `invalidLetters` array-of-arrays. Used a chip-style layout within the slots to allow multiple letters per position, including a small "x" on each chip for easy removal.
 
 ---
 
-### User Prompt 2 – 2026-04-29 07:37 – Clarifications
+### User Prompt 7 – 2026-04-29 08:14 – Placement Validation
+**Goal:** Prevent accidental placement of letters into positions already marked as invalid.
 
-> Okay, dragging a letter from the alphabet, it has to stay because I could be positioning that letter in one of the three different words, just to let me visualize things differently. Yes, reordering within a word, I would like to be able to do that. Yeah, why not? Moving between words, yeah, why not? And then removing a letter. Let's just drag it back to the alphabet, because I think just clicking on the letter once it's been placed, I just want it to toggle between the colors, the Wordle colors for correct position or correct letter but wrong position. I also don't want to worry about the gray or dark letters when they're not in there, because if I discover that a letter is not in the word, I will drag them off of the word. And the toggle order: it will initially go on uncolored, and then green or yellow. I won't be toggling it to gray because if I discover that a letter is not used, I will actually drag it off. I'm not worried about word validation at all. Let's start with that.
-
-**Decisions captured:**
-
-- Letters stay in alphabet (reusable palette)
-- Drag within / between words = swap
-- Drag back to keyboard = remove
-- Click placed tile cycles: uncolored → green → yellow → uncolored
-- No gray state, no word validation
-
----
-
-### User Prompt 3 – 2026-04-29 07:46 – Cross Out Alphabet Letters
-
-> Let me also be able to click on letters of the alphabet. If I click on them, it toggles between x-ing them out and resetting them.
-
-**Implemented:** Click a keyboard letter to cross it out (red strikethrough, dimmed). Click again to restore.
-
----
-
-### User Prompt 4 – 2026-04-29 07:49 – Ctrl+Drag to Copy
-
-> Is control drag on a PC the standard way of copying something? If it is, then I would like to be able to control drag a letter to duplicate it to another location or word.
-
-**Implemented:** Ctrl+drag from a placed word-tile copies it (source stays). Normal drag = swap. Browser shows "+" cursor when Ctrl is held.
-
----
-
-### User Prompt 5 – 2026-04-29 07:52 – 3-State Keyboard Click Cycle
-
-> I think I would like to also be able to click on the letter in the alphabet to indicate that it's part of the word. Let's change up the order:
+**Prompt:**
+> Let's add a validation rule: If I attempt to drag a letter into a position where it has already been marked as "invalid," the app should reject the placement. 
 >
-> - If I click on it the first time, it changes color to say that it's part of the word.
-> - If I click on it a second time, it will cross it off.
-> - Then I guess a third time would reset it.
+> Maybe the letter could "fly back" to where it came from and show a quick message explaining why it was rejected.
 
-**Implemented:** Keyboard letter click cycle: normal → in-word (yellow) → eliminated (strikethrough) → normal.
+**Technical Context:** Leveraged the native HTML5 drag-and-drop "reject" behavior (skipping `preventDefault` on invalid targets). Added a red-flash CSS animation and a temporary toast notification for user feedback.
 
 ---
 
-### User Prompt 6 – 2026-04-29 08:02 – Invalid Letters Row
+### User Prompt 8 – 2026-04-29 08:45 – Documentation Standard
+**Goal:** Formalize the structure of this prompt log for public transparency and professionalism.
 
-> I want to add an extra word where I can drag and drop letters, letters that are in the word but in the incorrect position. I still want to have five letters, but for instance I want to be able to drag more than one letter to it, just to indicate letters where they can't go. We could do that.
+**Prompt:**
+> Let's update the prompt file requirements to ensure every project has a professional Mission Statement at the top. 
 >
-> Right now we've got word one, two, three. Let's add a fourth word. We won't call it word four; we'll call it "invalid letters" or something like that. We can drag and drop letters to locations, so again the locations have to be able to accept more than one letter, theoretically up to four, I guess.
-
-**Implemented:** Added "Invalid" row with 5 multi-letter columns. Drop any letter to add a chip; click × to remove. Drag from word tile = move (source clears); Ctrl+drag = copy (source stays). Duplicate letters per slot are prevented.
+> While I want the prompts to remain raw and authentic, they should be reviewed for clarity and professional presentation. Let's also use structured headings like "Goal" and "Technical Context" to make the development log easier to navigate.
