@@ -344,6 +344,109 @@
     }
 
     .btn-reset:hover { border-color: var(--muted); color: #fff; background: var(--surface); }
+
+    /* ── Support & Feedback ── */
+    .support-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      z-index: 1000;
+    }
+
+    .support-link {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-decoration: underline;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .support-link:hover { color: #fff; }
+
+    .coffee-btn {
+      background: #ffdd00;
+      color: #000;
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .coffee-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .modal-content h3 {
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    .modal-content p {
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.6;
+      font-size: 0.9rem;
+    }
+
+    .modal-link {
+      display: inline-block;
+      background: #ffdd00;
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .modal-link:hover { background: #ffea00; }
+
+    .modal-close {
+      display: block;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -388,6 +491,24 @@
   </p>
 
   <button class="btn-reset" id="btn-reset">↺ &nbsp;Reset All</button>
+
+  <!-- Support & Feedback -->
+  <div class="support-container">
+    <a href="https://github.com/pbeens/Wordle-Aid/issues" target="_blank" class="support-link">Report an Issue</a>
+    <button class="coffee-btn" id="coffee-btn">
+      ☕ &nbsp;Buy Me a Coffee
+    </button>
+  </div>
+
+  <!-- Coffee Modal -->
+  <div class="modal-overlay" id="coffee-modal">
+    <div class="modal-content">
+      <h3>Support Wordle Aid</h3>
+      <p>If you are enjoying this, please consider buying me a coffee! Your support helps keep projects like this alive.</p>
+      <a href="https://buymeacoffee.com/pbeens" target="_blank" class="modal-link">Buy Me a Coffee</a>
+      <span class="modal-close" id="modal-close">Close</span>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -714,6 +835,25 @@
     renderWords();
     renderInvalidRow();
     renderKeyboard();
+  });
+
+  // ── Coffee Modal Logic ──────────────────────────────────
+  const coffeeBtn = document.getElementById('coffee-btn');
+  const coffeeModal = document.getElementById('coffee-modal');
+  const modalClose = document.getElementById('modal-close');
+
+  coffeeBtn.addEventListener('click', () => {
+    coffeeModal.style.display = 'flex';
+  });
+
+  modalClose.addEventListener('click', () => {
+    coffeeModal.style.display = 'none';
+  });
+
+  coffeeModal.addEventListener('click', (e) => {
+    if (e.target === coffeeModal) {
+      coffeeModal.style.display = 'none';
+    }
   });
 
   // ── Init ─────────────────────────────────────────────────

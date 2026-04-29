@@ -22,15 +22,20 @@ A browser-based drag-and-drop tool to help you visualize and strategize your [Wo
   - ~~**Eliminated**~~ — letter is not in the word (crossed out in red)
 - **Reset All** — clears everything back to a blank slate
 
-## Running Locally
+## Usage
 
-```bash
-python -m http.server 8765
-```
+### Online
 
-Then open [http://localhost:8765](http://localhost:8765) in your browser.
+The easiest way to use Wordle Aid is via GitHub Pages:
+**[https://peter.beens.ca/Wordle-Aid/](https://peter.beens.ca/Wordle-Aid/)**
 
-No build step, no dependencies — it's a single `index.html` file.
+### Offline / Local
+
+Because this is a single-file application, you don't even need to download the whole repository.
+
+1. Download just the [**index.html**](index.html) file.
+2. Open it in any modern web browser.
+3. That's it! No installation or local server required.
 
 ## Tech Stack
 
@@ -40,3 +45,14 @@ No build step, no dependencies — it's a single `index.html` file.
 ## Author
 
 **Peter Beens** — [github.com/pbeens](https://github.com/pbeens)
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details (or just know that you are free to use, modify, and distribute it as you wish!).
+
+---
+
+### Support & Feedback
+
+- **Report an Issue**: [GitHub Issues](https://github.com/pbeens/Wordle-Aid/issues)
+- **Enjoying the tool?**: [Buy Me a Coffee](https://buymeacoffee.com/pbeens)
