@@ -19,6 +19,7 @@
       --green: #538d4e;
       --yellow: #b59f3b;
       --key-bg: #818384;
+      --accent: #538d4e;
     }
 
     body {
@@ -447,6 +448,56 @@
       cursor: pointer;
       text-decoration: underline;
     }
+
+    .modal-close:hover { color: #fff; }
+
+    /* ── Mobile Warning ── */
+    #mobile-warning {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+      padding: 20px;
+    }
+
+    .warning-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .warning-content h3 { color: #ffdd00; margin-bottom: 12px; font-weight: 900; text-transform: uppercase; }
+    .warning-content p { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    
+    .btn-mobile-opt {
+      display: inline-block;
+      background: #538d4e;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 700;
+      margin-bottom: 16px;
+      transition: opacity 0.2s;
+    }
+    .btn-mobile-opt:hover { opacity: 0.9; }
+
+    .dismiss-warning {
+      display: block;
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-decoration: underline;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -508,6 +559,16 @@
       <p>If you are enjoying this, please consider buying me a coffee! Your support helps keep projects like this alive.</p>
       <a href="https://buymeacoffee.com/pbeens" target="_blank" class="modal-link">Buy Me a Coffee</a>
       <span class="modal-close" id="modal-close">Close</span>
+    </div>
+  </div>
+
+  <!-- Mobile Warning -->
+  <div id="mobile-warning">
+    <div class="warning-content">
+      <h3>Desktop Version</h3>
+      <p>This version of Wordle Aid uses drag-and-drop features designed for a mouse and keyboard.</p>
+      <a href="index_mobile.html" class="btn-mobile-opt">Try Mobile Experiment</a>
+      <span class="dismiss-warning" id="dismiss-warning">Continue to Desktop anyway</span>
     </div>
   </div>
 </main>
@@ -866,6 +927,19 @@
     if (e.target === coffeeModal) {
       coffeeModal.style.display = 'none';
     }
+  });
+
+  // ── Mobile Detection ─────────────────────────────────────
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const mobileWarning = document.getElementById('mobile-warning');
+  const dismissWarning = document.getElementById('dismiss-warning');
+
+  if (isTouch) {
+    mobileWarning.style.display = 'flex';
+  }
+
+  dismissWarning.addEventListener('click', () => {
+    mobileWarning.style.display = 'none';
   });
 
   // ── Init ─────────────────────────────────────────────────
