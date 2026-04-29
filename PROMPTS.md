@@ -121,3 +121,43 @@ This file documents the development history of **Wordle-Aid**. It serves as a tr
 > Add instructions to the README about how to run the program. Include the URL (https://peter.beens.ca/Wordle-Aid/) and the option for downloading just the index.html file for offline use. Also, add an MIT License section to the README.
 
 **Technical Context:** Updated README.md with an Online/Offline usage guide (pointing to the custom domain) and a standard MIT License notice.
+
+---
+
+### User Prompt 10 – 2026-04-29 12:02 – Adjust Keyboard Cycle Order
+**Goal:** Change the keyboard click order to prioritize elimination.
+
+**Prompt:**
+> I want to change the order of clicking on the letters of the alphabet. The first time that I click on a letter, I would like it to be struck out. The second time I click on it, I would like it to be highlighted like it's a valid letter.
+
+**Technical Context:** Updated the `KEY_STATE_CYCLE` object in `index.html` to `normal → crossed → in-word → normal`.
+
+---
+
+### User Prompt 11 – 2026-04-29 12:17 – Add Official Wordle Link
+**Goal:** Add a direct link to the NYT Wordle game for convenience.
+
+**Prompt:**
+> Let's add an open Wordle link. We can put that right above "Report an issue" and make sure it opens in a new tab.
+
+**Technical Context:** Added a link to `https://www.nytimes.com/games/wordle/index.html` in the support container on the web page.
+
+---
+
+### User Prompt 12 – 2026-04-29 12:20 – Auto-update Keyboard State
+**Goal:** Automatically mark letters as "in the word" when added to the invalid list.
+
+**Prompt:**
+> If I drag a letter to the invalid list, automatically change its color state on the keyboard.
+
+**Technical Context:** Updated the `drop` handler in `makeInvalidSlot` to set the letter's state in `keyStates` to `'in-word'` whenever a letter is dropped into an invalid position slot.
+
+---
+
+### User Prompt 13 – 2026-04-29 12:21 – Auto-update Keyboard on Green Tile
+**Goal:** Automatically mark letters as "in the word" when a tile is marked as correct (green).
+
+**Prompt:**
+> Let's do the same thing. If I drop a letter and then I mark it as the correct location... [automatically change its color state on the keyboard].
+
+**Technical Context:** Updated the `click` handler in `makeTile` to set the letter's state in `keyStates` to `'in-word'` whenever a tile is cycled to the `'green'` state.

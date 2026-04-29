@@ -18,8 +18,8 @@ A browser-based drag-and-drop tool to help you visualize and strategize your [Wo
 - **Rejection feature** — drops are rejected if they conflict with established "Invalid Letters" or other grid state rules.
 - **Keyboard letter states** — click a keyboard letter to cycle through:
   - *(normal)* — untracked
-  - 🟨 **In word** — letter is in the word (turns yellow)
   - ~~**Eliminated**~~ — letter is not in the word (crossed out in red)
+  - 🟨 **In word** — letter is in the word (turns yellow)
 - **Reset All** — clears everything back to a blank slate
 
 ## Usage

@@ -494,6 +494,7 @@
 
   <!-- Support & Feedback -->
   <div class="support-container">
+    <a href="https://www.nytimes.com/games/wordle/index.html" target="_blank" class="support-link">Open Wordle</a>
     <a href="https://github.com/pbeens/Wordle-Aid/issues" target="_blank" class="support-link">Report an Issue</a>
     <button class="coffee-btn" id="coffee-btn">
       ☕ &nbsp;Buy Me a Coffee
@@ -523,8 +524,8 @@
   // Invalid letters: 5 positions, each holding an array of letters
   let invalidLetters = Array.from({length: COLS}, () => []);
 
-  // Map of letter → state: '' | 'in-word' | 'crossed'
-  const KEY_STATE_CYCLE = { '': 'in-word', 'in-word': 'crossed', 'crossed': '' };
+  // Map of letter → state: '' | 'crossed' | 'in-word'
+  const KEY_STATE_CYCLE = { '': 'crossed', 'crossed': 'in-word', 'in-word': '' };
   let keyStates = new Map();
 
   // Active drag info
@@ -584,7 +585,15 @@
       tile.addEventListener('click', (e) => {
         // Don't cycle if we just finished a drag
         if (tile.classList.contains('is-dragging')) return;
-        colors[wi][si] = COLOR_CYCLE[colors[wi][si]];
+        const nextColor = COLOR_CYCLE[colors[wi][si]];
+        colors[wi][si] = nextColor;
+        
+        // If set to green, automatically mark as "in-word" on keyboard
+        if (nextColor === 'green') {
+          keyStates.set(letter, 'in-word');
+          renderKeyboard();
+        }
+        
         renderWords();
       });
 
@@ -736,6 +745,8 @@
       // Avoid exact duplicates in this slot
       if (!invalidLetters[si].includes(letter)) {
         invalidLetters[si].push(letter);
+        // Automatically mark as "in-word" on the keyboard
+        keyStates.set(letter, 'in-word');
       }
 
       // If dragged from a word tile without Ctrl: clear the source slot
@@ -747,6 +758,7 @@
 
       drag = null;
       renderInvalidRow();
+      renderKeyboard();
     });
 
     return slot;
