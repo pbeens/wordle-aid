@@ -118,7 +118,7 @@ This file documents the development history of **Wordle-Aid**. It serves as a tr
 **Goal:** Add usage instructions and licensing to the README.
 
 **Prompt:**
-> Add instructions to the README about how to run the program. Include the URL (https://peter.beens.ca/Wordle-Aid/) and the option for downloading just the index.html file for offline use. Also, add an MIT License section to the README.
+> Add instructions to the README about how to run the program. Include the URL (https://peter.beens.ca/wordle-aid/) and the option for downloading just the index.html file for offline use. Also, add an MIT License section to the README.
 
 **Technical Context:** Updated README.md with an Online/Offline usage guide (pointing to the custom domain) and a standard MIT License notice.
 

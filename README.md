@@ -27,7 +27,7 @@ A browser-based drag-and-drop tool to help you visualize and strategize your [Wo
 ### Online
 
 The easiest way to use Wordle Aid is via GitHub Pages:
-**[https://peter.beens.ca/Wordle-Aid/](https://peter.beens.ca/Wordle-Aid/)**
+**[https://peter.beens.ca/wordle-aid/](https://peter.beens.ca/wordle-aid/)**
 
 ### Offline / Local
 
@@ -54,5 +54,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ### Support & Feedback
 
-- **Report an Issue**: [GitHub Issues](https://github.com/pbeens/Wordle-Aid/issues)
+- **Report an Issue**: [GitHub Issues](https://github.com/pbeens/wordle-aid/issues)
 - **Enjoying the tool?**: [Buy Me a Coffee](https://buymeacoffee.com/pbeens)
