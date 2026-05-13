@@ -181,3 +181,53 @@ This file documents the development history of **Wordle-Aid**. It serves as a tr
 > On the main version, if you detect a mobile interface, can you perhaps provide a pop-up warning them that it is for desktop only?
 
 **Technical Context:** Added a touch-detection script and a modal overlay to `index.html`. The modal includes a call-to-action link to `index_mobile.html` and an option to dismiss the warning.
+
+---
+
+### User Prompt 16 – 2026-05-10 07:08 – Per-Row Missing Letter Highlights
+
+**Goal:** Show known in-word letters that are still missing from each candidate word row.
+
+**Prompt Summary:** Requested a codebase review first, then a UI enhancement so each word row displays highlighted letters on its right side when those letters are known to be in the solution but are not present in that row (example given: row 2 should show `R` as missing).
+
+**Technical Context:** Implemented per-row "missing letter" chips in `index.html` based on keyboard letters currently in the `in-word` state and wired row re-rendering when key state is cycled.
+
+---
+
+### User Prompt 17 – 2026-05-10 07:12 – Include Invalid-Row Known Letters in Row Hints
+
+**Goal:** Ensure every known in-word letter appears beside each row when missing from that row.
+
+**Prompt Summary:** Reported that `R` is clearly identified as in-word in the UI example, but only `A` appeared in right-side row hints. Requested `R` to also show beside each word.
+
+**Technical Context:** Updated known-letter derivation to use a union of keyboard `in-word` states, invalid-slot letters, and green/yellow placed tiles before computing per-row missing-letter chips.
+
+---
+
+### User Prompt 18 – 2026-05-10 07:16 – Refresh Missing-Letter Hints on Invalid-Row Edits
+
+**Goal:** Make right-side missing-letter hints update immediately after identifying letters.
+
+**Prompt Summary:** After refresh, adding identified letters did not show any right-side hints beside words. Requested behavior should update immediately.
+
+**Technical Context:** Fixed stale rendering by calling `renderWords()` whenever invalid chips are added or removed, so per-row missing-letter badges stay in sync with invalid-row state.
+
+---
+
+### User Prompt 19 – 2026-05-10 07:20 – Auto-Yellow for Known Letter Placement
+
+**Goal:** Automatically color known in-word letters as yellow when placed into a word slot.
+
+**Prompt Summary:** Observed that placing `A` (already identified as in-word) leaves the tile uncolored; requested automatic yellow assignment on placement.
+
+**Technical Context:** Updated drop logic so alphabet-to-word placement sets tile color to `yellow` when the placed letter is already known in-word.
+
+---
+
+### User Prompt 20 – 2026-05-10 07:23 – Mac Copy-Drag Modifier Support
+
+**Goal:** Make copy-drag behavior work naturally on macOS keyboards.
+
+**Prompt Summary:** Asked why control-drag copy is not working on a Mac keyboard.
+
+**Technical Context:** Updated drag/copy logic to treat both `Ctrl` and `Command` (`metaKey`) as copy modifiers, and updated on-page help text to show `Ctrl/Cmd + drag`.

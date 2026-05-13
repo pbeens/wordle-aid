@@ -82,6 +82,32 @@
 
     .word-tiles { display: flex; gap: 6px; }
 
+    .missing-letters {
+      min-width: 78px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      margin-left: 4px;
+    }
+
+    .missing-chip {
+      min-width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: 1px solid var(--yellow);
+      background: rgba(181, 159, 59, 0.22);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0 6px;
+    }
+
     /* ── Tiles ── */
     .tile {
       width: 62px;
@@ -533,7 +559,7 @@
     &nbsp;<span class="badge badge-yellow">yellow</span>&nbsp; wrong position
     &nbsp;·&nbsp; Drag back here to remove
     <br>
-    <kbd style="background:#2a2a2c;border:1px solid #555;border-radius:3px;padding:1px 5px;font-size:0.68rem;">Ctrl</kbd>+drag a placed letter to <em>copy</em> it (source stays)
+    <kbd style="background:#2a2a2c;border:1px solid #555;border-radius:3px;padding:1px 5px;font-size:0.68rem;">Ctrl</kbd>/<kbd style="background:#2a2a2c;border:1px solid #555;border-radius:3px;padding:1px 5px;font-size:0.68rem;">Cmd</kbd>+drag a placed letter to <em>copy</em> it (source stays)
     <br>
     Click a keyboard letter to cycle:
     normal &rarr; <span class="badge badge-yellow" style="font-size:0.66rem;">in word</span> &rarr;
@@ -623,8 +649,58 @@
       }
 
       row.appendChild(tiles);
+      row.appendChild(makeMissingLettersBadge(wi));
       section.appendChild(row);
     }
+  }
+
+  function getKnownInWordLetters() {
+    const known = new Set();
+
+    // Explicit keyboard "in-word" markings
+    keyStates.forEach((state, letter) => {
+      if (state === 'in-word') known.add(letter);
+    });
+
+    // Invalid-position chips also imply the letter is in the word
+    invalidLetters.forEach(slotLetters => {
+      slotLetters.forEach(letter => known.add(letter));
+    });
+
+    // Any placed green/yellow tile implies "in-word"
+    for (let wi = 0; wi < ROWS; wi++) {
+      for (let si = 0; si < COLS; si++) {
+        const letter = letters[wi][si];
+        const color = colors[wi][si];
+        if (letter && (color === 'green' || color === 'yellow')) {
+          known.add(letter);
+        }
+      }
+    }
+
+    return [...known].sort();
+  }
+
+  function makeMissingLettersBadge(wi) {
+    const missingWrap = document.createElement('div');
+    missingWrap.className = 'missing-letters';
+
+    const knownLetters = getKnownInWordLetters();
+    const rowLetters = new Set(letters[wi].filter(Boolean));
+    const missingLetters = knownLetters.filter(letter => !rowLetters.has(letter));
+
+    missingLetters.forEach((letter) => {
+      const chip = document.createElement('div');
+      chip.className = 'missing-chip';
+      chip.textContent = letter;
+      missingWrap.appendChild(chip);
+    });
+
+    return missingWrap;
+  }
+
+  function isKnownInWordLetter(letter) {
+    return getKnownInWordLetters().includes(letter);
   }
 
   function makeTile(wi, si) {
@@ -690,7 +766,7 @@
 
       e.preventDefault();
       // Show copy cursor when Ctrl is held
-      if (drag && drag.source === 'word' && e.ctrlKey) {
+      if (drag && drag.source === 'word' && (e.ctrlKey || e.metaKey)) {
         e.dataTransfer.dropEffect = 'copy';
       } else {
         e.dataTransfer.dropEffect = drag && drag.source === 'word' ? 'move' : 'copy';
@@ -717,12 +793,12 @@
       if (drag.source === 'alphabet') {
         // Place letter from keyboard; reset color
         letters[targetWi][targetSi] = drag.letter;
-        colors[targetWi][targetSi]  = '';
+        colors[targetWi][targetSi]  = isKnownInWordLetter(drag.letter) ? 'yellow' : '';
       } else {
         const srcWi = drag.wi, srcSi = drag.si;
         if (srcWi === targetWi && srcSi === targetSi) return;
 
-        if (e.ctrlKey) {
+        if (e.ctrlKey || e.metaKey) {
           // Ctrl+drag = COPY: source stays, target gets letter+color
           letters[targetWi][targetSi] = drag.letter;
           colors[targetWi][targetSi]  = colors[srcWi][srcSi];
@@ -784,6 +860,7 @@
         e.stopPropagation();
         invalidLetters[si].splice(idx, 1);
         renderInvalidRow();
+        renderWords();
       });
       slot.appendChild(chip);
     });
@@ -810,8 +887,8 @@
         keyStates.set(letter, 'in-word');
       }
 
-      // If dragged from a word tile without Ctrl: clear the source slot
-      if (drag.source === 'word' && !e.ctrlKey) {
+      // If dragged from a word tile without copy modifier: clear the source slot
+      if (drag.source === 'word' && !(e.ctrlKey || e.metaKey)) {
         letters[drag.wi][drag.si] = '';
         colors[drag.wi][drag.si]  = '';
         renderWords();
@@ -820,6 +897,7 @@
       drag = null;
       renderInvalidRow();
       renderKeyboard();
+      renderWords();
     });
 
     return slot;
@@ -857,6 +935,7 @@
           } else {
             keyStates.delete(letter);
           }
+          renderWords();
         });
 
         // Apply saved state on re-render
