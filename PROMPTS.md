@@ -231,3 +231,14 @@ This file documents the development history of **Wordle-Aid**. It serves as a tr
 **Prompt Summary:** Asked why control-drag copy is not working on a Mac keyboard.
 
 **Technical Context:** Updated drag/copy logic to treat both `Ctrl` and `Command` (`metaKey`) as copy modifiers, and updated on-page help text to show `Ctrl/Cmd + drag`.
+
+---
+
+### User Prompt 21 – 2026-08-11 07:45 – Auto-Fill Green Letters
+
+**Goal:** Automatically propagate a green letter to all other slots (rows) at the same position.
+
+**Prompt Summary:** Request to auto-fill a letter to other slots when marked green.
+
+**Technical Context:** Implemented automatic green letter propagation and removal across columns. Setting a tile to green (via click or drop) propagates the letter and green status to all other rows. Changing a tile away from green clears it from the other rows. Updated both `index.html` and `index_mobile.html`.
+

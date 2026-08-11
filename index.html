@@ -722,13 +722,26 @@
       tile.addEventListener('click', (e) => {
         // Don't cycle if we just finished a drag
         if (tile.classList.contains('is-dragging')) return;
-        const nextColor = COLOR_CYCLE[colors[wi][si]];
+        const oldColor = colors[wi][si];
+        const nextColor = COLOR_CYCLE[oldColor];
         colors[wi][si] = nextColor;
         
-        // If set to green, automatically mark as "in-word" on keyboard
+        // If set to green, automatically mark as "in-word" on keyboard and propagate
         if (nextColor === 'green') {
           keyStates.set(letter, 'in-word');
           renderKeyboard();
+          for (let r = 0; r < ROWS; r++) {
+            letters[r][si] = letter;
+            colors[r][si] = 'green';
+          }
+        } else if (oldColor === 'green') {
+          // If it was green and we changed it away, clear it from other rows if they still have this green letter
+          for (let r = 0; r < ROWS; r++) {
+            if (r !== wi && letters[r][si] === letter && colors[r][si] === 'green') {
+              letters[r][si] = '';
+              colors[r][si] = '';
+            }
+          }
         }
         
         renderWords();
@@ -790,12 +803,22 @@
         return;
       }
 
+      const prevTargetGreen = (colors[targetWi][targetSi] === 'green') ? letters[targetWi][targetSi] : '';
+      let prevSrcGreen = '';
+      let srcWi, srcSi;
+      if (drag.source === 'word') {
+        srcWi = drag.wi;
+        srcSi = drag.si;
+        if (colors[srcWi][srcSi] === 'green') {
+          prevSrcGreen = letters[srcWi][srcSi];
+        }
+      }
+
       if (drag.source === 'alphabet') {
         // Place letter from keyboard; reset color
         letters[targetWi][targetSi] = drag.letter;
         colors[targetWi][targetSi]  = isKnownInWordLetter(drag.letter) ? 'yellow' : '';
       } else {
-        const srcWi = drag.wi, srcSi = drag.si;
         if (srcWi === targetWi && srcSi === targetSi) return;
 
         if (e.ctrlKey || e.metaKey) {
@@ -810,6 +833,40 @@
           colors[targetWi][targetSi]  = colors[srcWi][srcSi];
           letters[srcWi][srcSi] = tmpL;
           colors[srcWi][srcSi]  = tmpC;
+        }
+      }
+
+      // Propagate or clear green letters in target column
+      if (colors[targetWi][targetSi] === 'green') {
+        const letter = letters[targetWi][targetSi];
+        for (let r = 0; r < ROWS; r++) {
+          letters[r][targetSi] = letter;
+          colors[r][targetSi] = 'green';
+        }
+      } else if (prevTargetGreen) {
+        for (let r = 0; r < ROWS; r++) {
+          if (letters[r][targetSi] === prevTargetGreen && colors[r][targetSi] === 'green') {
+            letters[r][targetSi] = '';
+            colors[r][targetSi] = '';
+          }
+        }
+      }
+
+      // Propagate or clear green letters in source column
+      if (drag.source === 'word') {
+        if (colors[srcWi][srcSi] === 'green') {
+          const letter = letters[srcWi][srcSi];
+          for (let r = 0; r < ROWS; r++) {
+            letters[r][srcSi] = letter;
+            colors[r][srcSi] = 'green';
+          }
+        } else if (prevSrcGreen) {
+          for (let r = 0; r < ROWS; r++) {
+            if (letters[r][srcSi] === prevSrcGreen && colors[r][srcSi] === 'green') {
+              letters[r][srcSi] = '';
+              colors[r][srcSi] = '';
+            }
+          }
         }
       }
 
@@ -889,8 +946,19 @@
 
       // If dragged from a word tile without copy modifier: clear the source slot
       if (drag.source === 'word' && !(e.ctrlKey || e.metaKey)) {
+        const prevGreen = (colors[drag.wi][drag.si] === 'green') ? letters[drag.wi][drag.si] : '';
+        const dsi = drag.si;
         letters[drag.wi][drag.si] = '';
         colors[drag.wi][drag.si]  = '';
+        
+        if (prevGreen) {
+          for (let r = 0; r < ROWS; r++) {
+            if (letters[r][dsi] === prevGreen && colors[r][dsi] === 'green') {
+              letters[r][dsi] = '';
+              colors[r][dsi] = '';
+            }
+          }
+        }
         renderWords();
       }
 
@@ -970,8 +1038,20 @@
     alphSection.classList.remove('accepting');
     if (drag && drag.source === 'word') {
       e.preventDefault();
+      const prevGreen = (colors[drag.wi][drag.si] === 'green') ? letters[drag.wi][drag.si] : '';
+      const si = drag.si;
       letters[drag.wi][drag.si] = '';
       colors[drag.wi][drag.si]  = '';
+      
+      if (prevGreen) {
+        for (let r = 0; r < ROWS; r++) {
+          if (letters[r][si] === prevGreen && colors[r][si] === 'green') {
+            letters[r][si] = '';
+            colors[r][si] = '';
+          }
+        }
+      }
+      
       drag = null;
       renderWords();
     }

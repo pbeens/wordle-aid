@@ -8,7 +8,7 @@ A browser-based drag-and-drop tool to help you visualize and strategize your [Wo
 - **QWERTY keyboard palette** — drag any letter from the keyboard; it stays available for reuse
 - **Color coding** — click a placed letter to cycle through:
   - *(uncolored)* — not yet evaluated
-  - 🟩 **Green** — correct letter, correct position
+  - 🟩 **Green** — correct letter, correct position (automatically fills that letter as green in the same position across other word rows)
   - 🟨 **Yellow** — correct letter, wrong position
 - **Reorder & move** — drag letters between positions within a word, or across words (swap)
 - **Ctrl+drag to copy** — hold Ctrl while dragging a placed letter to duplicate it (source stays). Implemented: Ctrl+drag from a placed word-tile copies it (source stays). Normal drag = swap. Browser shows "+" cursor when Ctrl is held.

@@ -349,11 +349,25 @@
     // Separate cycle trigger to avoid confusion
     function toggleTileColor(wi, si) {
       if (!letters[wi][si]) return;
-      const next = COLOR_CYCLE[colors[wi][si]];
+      const oldColor = colors[wi][si];
+      const next = COLOR_CYCLE[oldColor];
       colors[wi][si] = next;
+      const letter = letters[wi][si];
       if (next === 'green') {
-        keyStates.set(letters[wi][si], 'in-word');
+        keyStates.set(letter, 'in-word');
         renderKeyboard();
+        for (let r = 0; r < ROWS; r++) {
+          letters[r][si] = letter;
+          colors[r][si] = 'green';
+        }
+      } else if (oldColor === 'green') {
+        // If it was green and we changed it away, clear it from other rows if they still have this green letter
+        for (let r = 0; r < ROWS; r++) {
+          if (r !== wi && letters[r][si] === letter && colors[r][si] === 'green') {
+            letters[r][si] = '';
+            colors[r][si] = '';
+          }
+        }
       }
       renderWords();
     }
@@ -376,6 +390,14 @@
           return;
         }
 
+        const prevTargetGreen = (colors[wi][si] === 'green') ? letters[wi][si] : '';
+        let prevSrcGreen = '';
+        if (selection.source === 'word') {
+          if (colors[selection.wi][selection.si] === 'green') {
+            prevSrcGreen = letters[selection.wi][selection.si];
+          }
+        }
+
         const oldLetter = letters[wi][si];
         const oldColor = colors[wi][si];
 
@@ -383,9 +405,45 @@
         if (selection.source === 'word') {
           letters[selection.wi][selection.si] = oldLetter;
           colors[selection.wi][selection.si] = oldColor;
-          colors[wi][si] = colors[wi][si]; // keep current? No, logic is tricky.
+          // In mobile swap, the colors are kept in their original grid positions
         } else {
           colors[wi][si] = '';
+        }
+
+        // Propagate or clear green letters in target column
+        if (colors[wi][si] === 'green') {
+          const letter = letters[wi][si];
+          for (let r = 0; r < ROWS; r++) {
+            letters[r][si] = letter;
+            colors[r][si] = 'green';
+          }
+        } else if (prevTargetGreen) {
+          for (let r = 0; r < ROWS; r++) {
+            if (letters[r][si] === prevTargetGreen && colors[r][si] === 'green') {
+              letters[r][si] = '';
+              colors[r][si] = '';
+            }
+          }
+        }
+
+        // Propagate or clear green letters in source column
+        if (selection.source === 'word') {
+          const srcWi = selection.wi;
+          const srcSi = selection.si;
+          if (colors[srcWi][srcSi] === 'green') {
+            const letter = letters[srcWi][srcSi];
+            for (let r = 0; r < ROWS; r++) {
+              letters[r][srcSi] = letter;
+              colors[r][srcSi] = 'green';
+            }
+          } else if (prevSrcGreen) {
+            for (let r = 0; r < ROWS; r++) {
+              if (letters[r][srcSi] === prevSrcGreen && colors[r][srcSi] === 'green') {
+                letters[r][srcSi] = '';
+                colors[r][srcSi] = '';
+              }
+            }
+          }
         }
 
         selection = null;
@@ -406,8 +464,19 @@
           keyStates.set(letter, 'in-word');
         }
         if (selection.source === 'word') {
+          const prevGreen = (colors[selection.wi][selection.si] === 'green') ? letters[selection.wi][selection.si] : '';
+          const ssi = selection.si;
           letters[selection.wi][selection.si] = '';
           colors[selection.wi][selection.si] = '';
+
+          if (prevGreen) {
+            for (let r = 0; r < ROWS; r++) {
+              if (letters[r][ssi] === prevGreen && colors[r][ssi] === 'green') {
+                letters[r][ssi] = '';
+                colors[r][ssi] = '';
+              }
+            }
+          }
         }
         selection = null;
         renderInvalidRow();
